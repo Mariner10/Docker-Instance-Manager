@@ -1,0 +1,207 @@
+#!/usr/bin/env python3
+
+import os
+import sys
+import shutil
+import subprocess
+import json
+
+# --- CONFIGURATION ---
+CWD = os.getcwd()
+INSTANCE_DIR = os.path.join(CWD, 'instances')
+SOURCE_DIR = os.path.join(CWD, 'source')
+DOCKERFILE_SRC = os.path.join(SOURCE_DIR, 'Dockerfile')
+DEFUALT_USER = 'linux'
+SHELL_SCRIPT_SRC = os.path.join(SOURCE_DIR, 'run.sh')
+
+def clear_screen():
+    os.system('cls' if os.name == 'nt' else 'clear')
+
+def check_dependencies():
+    """Ensures source files and instance directories exist."""
+    if not os.path.exists(DOCKERFILE_SRC):
+        print(f"Error: Dockerfile not found at {DOCKERFILE_SRC}")
+        sys.exit(1)
+    if not os.path.exists(SHELL_SCRIPT_SRC):
+        print(f"Error: run.sh not found at {SHELL_SCRIPT_SRC}")
+        sys.exit(1)
+    if not os.path.exists(INSTANCE_DIR):
+        os.mkdir(INSTANCE_DIR)
+
+def get_instances():
+    """Returns a sorted list of valid instance folder names."""
+    if not os.path.exists(INSTANCE_DIR):
+        return []
+    return sorted([
+        d for d in os.listdir(INSTANCE_DIR) 
+        if os.path.isdir(os.path.join(INSTANCE_DIR, d))
+    ])
+
+def run_instance_script(target_dir, config):
+    """Executes the run.sh script using the stored config."""
+    print(f"\n--- Launching {config['project_name']} ---")
+    
+    cmd = [
+        "./run.sh",
+        "-i", config['image_name'],
+        "-d", config['data_dir'],
+        "-u", config['username']
+    ]
+    
+    try:
+        subprocess.run(cmd, cwd=target_dir, check=True)
+        sys.exit(0)
+    except subprocess.CalledProcessError as e:
+        print(f"\nError: Instance failed with code {e.returncode}")
+    except KeyboardInterrupt:
+        print("\nSession interrupted.")
+
+# --- ACTIONS ---
+
+def create_instance():
+    print("\n=== Create New Instance ===")
+    project_name_raw = input("Name Project: ").strip()
+    if not project_name_raw:
+        print("Error: Name required.")
+        return
+
+    project_name = project_name_raw.replace(" ", "_")
+    target_dir = os.path.join(INSTANCE_DIR, project_name)
+    
+    if os.path.exists(target_dir):
+        print(f"Error: Instance '{project_name}' already exists.")
+        return
+
+    username = input(f'Enter Username: ').strip() or DEFUALT_USER
+
+    # 1. Create Folder
+    os.mkdir(target_dir)
+    
+    # 2. Copy Files
+    shutil.copy(DOCKERFILE_SRC, target_dir)
+    target_script_path = os.path.join(target_dir, 'run.sh')
+    shutil.copy(SHELL_SCRIPT_SRC, target_script_path)
+    os.chmod(target_script_path, 0o755)
+
+    # 3. Create Config (To remember settings for later launches)
+    config = {
+        "project_name": project_name,
+        "image_name": project_name.lower(),
+        "data_dir": f"{project_name}_data".lower(),
+        "username": username
+    }
+    
+    with open(os.path.join(target_dir, "config.json"), "w") as f:
+        json.dump(config, f)
+
+    print(f"Instance '{project_name}' created successfully.")
+    
+    if input("Launch now? (y/n): ").lower() == 'y':
+        run_instance_script(target_dir, config)
+    else:
+        sys.exit(0)
+
+def launch_instance():
+    print("\n=== Launch Existing Instance ===")
+    instances = get_instances()
+    
+    if not instances:
+        print("No instances found.")
+        return
+
+    for idx, name in enumerate(instances):
+        print(f"{idx + 1}. {name}")
+
+    try:
+        selection = int(input("\nSelect instance number: ")) - 1
+        if 0 <= selection < len(instances):
+            project_name = instances[selection]
+            target_dir = os.path.join(INSTANCE_DIR, project_name)
+            config_path = os.path.join(target_dir, "config.json")
+            
+            # Load config to get the correct User/Image args
+            if os.path.exists(config_path):
+                with open(config_path, "r") as f:
+                    config = json.load(f)
+                run_instance_script(target_dir, config)
+            else:
+                print("Error: config.json missing. Cannot auto-launch.")
+        else:
+            print("Invalid selection.")
+    except ValueError:
+        print("Invalid input.")
+
+def delete_instance():
+    print("\n=== Delete Instance ===")
+    instances = get_instances()
+    
+    if not instances:
+        print("No instances found.")
+        return
+
+    for idx, name in enumerate(instances):
+        print(f"{idx + 1}. {name}")
+
+    try:
+        selection = int(input("\nSelect instance number to DELETE: ")) - 1
+        if 0 <= selection < len(instances):
+            project_name = instances[selection]
+            target_dir = os.path.join(INSTANCE_DIR, project_name)
+            
+            confirm = input(f"Are you sure you want to delete '{project_name}'? (y/N): ")
+            if confirm.lower() == 'y':
+                # Remove Folder
+                shutil.rmtree(target_dir)
+                print(f"Directory '{project_name}' removed.")
+                
+                # Optional: Remove Docker Image
+                rm_image = input("Remove associated Docker image too? (y/N): ")
+                if rm_image.lower() == 'y':
+                    image_name = project_name.lower()
+                    subprocess.run(["docker", "rm", image_name], stderr=subprocess.DEVNULL)
+                    subprocess.run(["docker", "rmi", image_name], stderr=subprocess.DEVNULL)
+                    print(f"Done.")
+            else:
+                print("Deletion cancelled.")
+        else:
+            print("Invalid selection.")
+    except ValueError:
+        print("Invalid input.")
+
+# --- MAIN MENU ---
+
+def main():
+    check_dependencies()
+    clear_screen()
+    
+    while True:
+        print("\n-------------------------")
+        print("   CONTAINER MANAGER")
+        print("-------------------------")
+        print("1. Create New Instance")
+        print("2. Launch Instance")
+        print("3. Delete Instance")
+        print("4. Exit")
+        
+        choice = input("\nChoose option: ").strip()
+        
+        if choice == '1':
+            clear_screen()
+            create_instance()
+        elif choice == '2':
+            clear_screen()
+            launch_instance()
+        elif choice == '3':
+            clear_screen()
+            delete_instance()
+        elif choice == '4':
+            print("Exiting.")
+            sys.exit(0)
+        else:
+            print("Invalid option.")
+
+if __name__ == "__main__":
+    try:
+        main()
+    except KeyboardInterrupt:
+        print("\nExiting.")
