@@ -5,7 +5,8 @@ IMAGE_NAME="debian-linux"
 USER="linux"
 BASHRC='
 source /etc/profile.d/bash_completion.sh\n
-clear'
+clear
+'
 
 # Function to display usage
 usage() {

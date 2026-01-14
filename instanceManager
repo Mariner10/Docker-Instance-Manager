@@ -45,7 +45,8 @@ def run_instance_script(target_dir, config):
         "./run.sh",
         "-i", config['image_name'],
         "-d", config['data_dir'],
-        "-u", config['username']
+        "-u", config['username'],
+        "-b", config['bashrc']
     ]
     
     try:
@@ -84,11 +85,15 @@ def create_instance():
     os.chmod(target_script_path, 0o755)
 
     # 3. Create Config (To remember settings for later launches)
+    with open(os.path.join(SOURCE_DIR,'BASHRC.txt')) as bashrcFile:
+        bashrc = bashrcFile.read()
+
     config = {
         "project_name": project_name,
         "image_name": project_name.lower(),
         "data_dir": f"{project_name}_data".lower(),
-        "username": username
+        "username": username,
+        "bashrc": bashrc,
     }
     
     with open(os.path.join(target_dir, "config.json"), "w") as f:
