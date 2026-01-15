@@ -8,8 +8,8 @@ import json
 
 # --- CONFIGURATION ---
 CWD = os.getcwd()
-INSTANCE_DIR = os.path.join(CWD, 'instances')
-SOURCE_DIR = os.path.join(CWD, 'source')
+INSTANCE_DIR = os.path.join(CWD, '.instances')
+SOURCE_DIR = os.path.join(CWD, '.source')
 DOCKERFILE_SRC = os.path.join(SOURCE_DIR, 'Dockerfile')
 DEFUALT_USER = 'linux'
 SHELL_SCRIPT_SRC = os.path.join(SOURCE_DIR, 'run.sh')
@@ -51,6 +51,8 @@ def run_instance_script(target_dir, config):
     
     try:
         subprocess.run(cmd, cwd=target_dir, check=True)
+        subprocess.run(["docker", "rmi", config['image_name']], stderr=subprocess.DEVNULL)
+
         sys.exit(0)
     except subprocess.CalledProcessError as e:
         print(f"\nError: Instance failed with code {e.returncode}")
@@ -82,6 +84,7 @@ def create_instance():
     shutil.copy(DOCKERFILE_SRC, target_dir)
     target_script_path = os.path.join(target_dir, 'run.sh')
     shutil.copy(SHELL_SCRIPT_SRC, target_script_path)
+    shutil.copytree(os.path.join(SOURCE_DIR,'executables'),os.path.join(target_dir,'executables'))
     os.chmod(target_script_path, 0o755)
 
     # 3. Create Config (To remember settings for later launches)

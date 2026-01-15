@@ -9,22 +9,18 @@ ARG USER_GID=$USER_UID
 # 1. Install Tools
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
-    # --- Basic Dev Tools ---
     curl wget git sudo nano procps tree \
-    bash-completion man-db \
-    # --- Python Environment ---
-    python3 python3-pip python3-venv \
-    # --- Network Connectivity ---
+    bash-completion man-db btop \
+    python3 python3-pip python3-venv npm \
     iputils-ping dnsutils iproute2 net-tools traceroute mtr-tiny \
-    # --- Network Security ---
-    nmap netcat-openbsd tcpdump socat openssl ca-certificates \
+    nmap netcat-openbsd tcpdump socat openssl ca-certificates hping3 \
     && apt-get clean && \
     rm -rf /var/lib/apt/lists/* \
-    # --- User Setup ---
     && groupadd --gid $USER_GID $USERNAME \
     && useradd --uid $USER_UID --gid $USER_GID -m $USERNAME -s /bin/bash \
     && echo $USERNAME ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/$USERNAME \
-    && chmod 0440 /etc/sudoers.d/$USERNAME
+    && chmod 0440 /etc/sudoers.d/$USERNAME \
+    && npm install -g @google/gemini-cli
 
 # 3. Finalize
 USER $USERNAME

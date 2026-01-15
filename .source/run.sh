@@ -38,7 +38,10 @@ done
 # 1. Setup Data Directory
 mkdir -p "$DATA_DIR"
 mkdir -p "$DATA_DIR/.logs"
-echo -e $BASHRC >> "$DATA_DIR/.bashrc"
+mkdir -p "$DATA_DIR/.bin"
+echo -e "$BASHRC" > "$DATA_DIR/.bashrc"
+cp -pR ./executables/. "$DATA_DIR/.bin/" && rm -rf ./executables/ && find "$DATA_DIR/.bin" -type f -exec chmod +x {} +
+
 
 # --- REPLACEMENT BLOCK START ---
 
