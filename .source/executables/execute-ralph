@@ -1,0 +1,57 @@
+#!/usr/bin/env bash
+
+# -------- DEFAULTS --------
+LIMIT=5
+LOG_FILE="./claude-run.log"
+TODOFILE="./.agent/todo.md"
+
+# -------- ARG PARSING --------
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    -l|--limit)
+      LIMIT="$2"
+      shift 2
+      ;;
+    *)
+      echo "Unknown argument: $1"
+      exit 1
+      ;;
+  esac
+done
+
+# -------- MAIN LOOP --------
+c=0
+while [[ $c -le $LIMIT ]]; do
+
+  if [[ $c -eq 0 ]]; then
+    if [[ ! -f "$TODOFILE" ]]; then  
+      echo "===== First initial setup run =====" | tee -a "$LOG_FILE"
+      cat .prompts/initialPrompt.md | claude \
+      --dangerously-skip-permissions \
+      --append-system-prompt .prompts/ralphPrompt.md \
+      --output-format text \
+      --add-dir . \
+      --add-dir .agent \
+      --verbose \
+      -p "Go." \
+      2>&1 | tee -a "$LOG_FILE"
+      ((c++))
+      continue
+    else
+      echo "===== Setup already complete, moving on. =====" | tee -a "$LOG_FILE"
+    fi
+  fi
+
+  echo "===== ITERATION $c =====" | tee -a "$LOG_FILE"
+  claude \
+    --dangerously-skip-permissions \
+    --append-system-prompt .prompts/ralphPrompt.md \
+    --output-format text \
+    --add-dir . \
+    --add-dir .agent \
+    --verbose \
+    -p "Complete only the next incomplete task." \
+    2>&1 | tee -a "$LOG_FILE"
+
+  ((c++))
+done

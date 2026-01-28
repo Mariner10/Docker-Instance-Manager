@@ -1,1 +1,6 @@
 .instances*
+.DS_Store
+.source/executables/awsConfig
+.source/executables/claude
+.source/home_directory_items/*
+.source/prompts/initialPrompt.md

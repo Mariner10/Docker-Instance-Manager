@@ -50,8 +50,8 @@ def run_instance_script(target_dir, config):
     ]
     
     try:
-        subprocess.run(cmd, cwd=target_dir, check=True)
-        subprocess.run(["docker", "rmi", config['image_name']], stderr=subprocess.DEVNULL)
+        os.chdir(target_dir)
+        os.execvp(cmd[0], cmd)
 
         sys.exit(0)
     except subprocess.CalledProcessError as e:
@@ -85,6 +85,8 @@ def create_instance():
     target_script_path = os.path.join(target_dir, 'run.sh')
     shutil.copy(SHELL_SCRIPT_SRC, target_script_path)
     shutil.copytree(os.path.join(SOURCE_DIR,'executables'),os.path.join(target_dir,'executables'))
+    shutil.copytree(os.path.join(SOURCE_DIR,'prompts'),os.path.join(target_dir,'prompts'))
+    shutil.copytree(os.path.join(SOURCE_DIR,'home_directory_items'),os.path.join(target_dir,'home_directory_items'))
     os.chmod(target_script_path, 0o755)
 
     # 3. Create Config (To remember settings for later launches)

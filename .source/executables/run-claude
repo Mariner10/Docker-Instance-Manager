@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# -------- CONFIGURATION --------
+AWS_PROFILE="Claude"
+AWS_CONFIG_SOURCE="./.bin/awsConfig"
+CLAUDE_INSTALL_URL="https://claude.ai/install.sh"
+CLAUDE_BIN="/usr/local/bin/claude"   # system-wide target
+TEMP_INSTALL="~/.bin/claude-install"
+
+# -------- AWS SSO SETUP --------
+echo "Setting up AWS config..."
+mkdir -p "$HOME/.aws"
+if [ -f "$AWS_CONFIG_SOURCE" ]; then
+    cp "$AWS_CONFIG_SOURCE" "$HOME/.aws/config"
+    chmod 600 "$HOME/.aws/config"
+else
+    echo "Warning: AWS config source $AWS_CONFIG_SOURCE not found!"
+fi
+
+# Check if AWS SSO is already logged in
+echo "Checking AWS SSO login..."
+if ! aws sts get-caller-identity --profile "$AWS_PROFILE" >/dev/null 2>&1; then
+    echo "Not logged in. Performing AWS SSO login..."
+    aws sso login --profile "$AWS_PROFILE" --use-device-code
+else
+    echo "AWS SSO already logged in. Skipping login."
+fi
+
+
+echo "Setup complete."
+
+#npm install get-shit-done-cc -y
+
+#echo 1 | npx get-shit-done-cc
+
+clear
+
+execute-ralph

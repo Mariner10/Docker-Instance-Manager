@@ -39,8 +39,25 @@ done
 mkdir -p "$DATA_DIR"
 mkdir -p "$DATA_DIR/.logs"
 mkdir -p "$DATA_DIR/.bin"
+mkdir -p "$DATA_DIR/.prompts"
 echo -e "$BASHRC" > "$DATA_DIR/.bashrc"
-cp -pR ./executables/. "$DATA_DIR/.bin/" && rm -rf ./executables/ && find "$DATA_DIR/.bin" -type f -exec chmod +x {} +
+if [[ -d ./executables ]]; then
+  cp -pR ./executables/. "$DATA_DIR/.bin/"
+  rm -rf ./executables/
+  find "$DATA_DIR/.bin" -type f -exec chmod +x {} +
+fi
+
+if [[ -d ./prompts ]]; then
+  cp -pR ./prompts/. "$DATA_DIR/.prompts/"
+  rm -rf ./prompts/
+fi
+
+if [[ -d ./home_directory_items ]]; then
+  cp -pR ./home_directory_items/. "$DATA_DIR/"
+  rm -rf ./home_directory_items/
+fi
+
+
 
 
 # --- REPLACEMENT BLOCK START ---
@@ -56,9 +73,10 @@ if [ "$(docker ps -a -q -f name=$IMAGE_NAME)" ]; then
         docker exec -it $IMAGE_NAME /bin/bash
     else
         echo "Status: STOPPED. Restarting..."
-        # 'start -ai' restarts the container and attaches your terminal to it
-        docker start -ai $IMAGE_NAME
+        docker start $IMAGE_NAME
+        docker exec -it $IMAGE_NAME /bin/bash
     fi
+
 
 else
     echo "--- No container found. Building and Creating New ---"
