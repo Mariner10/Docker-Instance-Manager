@@ -50,7 +50,7 @@ while [[ $c -le $LIMIT ]]; do
     --add-dir . \
     --add-dir .agent \
     --verbose \
-    -p "Complete only the next incomplete task." \
+    -p "Read .agent/todo.md and only complete the next incomplete task." \
     2>&1 | tee -a "$LOG_FILE"
 
   ((c++))

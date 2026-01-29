@@ -79,7 +79,7 @@ def create_instance():
 
     # 1. Create Folder
     os.mkdir(target_dir)
-    os.mkdir(os.path.join(SOURCE_DIR,'home_directory_items'))
+    os.makedirs(os.path.join(SOURCE_DIR,'home_directory_items'),exist_ok=True)
     
     # 2. Copy Files
     shutil.copy(DOCKERFILE_SRC, target_dir)
